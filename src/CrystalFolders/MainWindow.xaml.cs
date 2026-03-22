@@ -1,4 +1,4 @@
-﻿using HandyControl.Controls;
+using HandyControl.Controls;
 using HandyControl.Data;
 using Microsoft.Win32;
 using System;
@@ -84,17 +84,31 @@ namespace CrystalFolders
             }
         }
 
-        private void CheckBoxes(string primary, bool addrem)
+        private void CheckBoxes(Environment.SpecialFolder specialFolder, bool addrem)
         {
             try // try catch como solución temporal al error "la app crashea"
             {
+                // Obtener la ruta real de la biblioteca
+                string primaryPath = Environment.GetFolderPath(specialFolder);
+
+                // Si la ruta está vacía (por ej. una biblioteca no existe), salir
+                if (string.IsNullOrEmpty(primaryPath)) return;
+
                 // Lista de directorios para el folder especificado
-                string[] directories = Directory.GetDirectories(userPath + @"\" + primary + @"\", "*");
+                string[] directories = Directory.GetDirectories(primaryPath + @"\", "*");
                 // Para cada directorio en la lista de directorios...
                 foreach (string directory in directories)
                 {
-                    // Crear una ruta corta del directorio (..\Documentos)
-                    string path = directory.Replace(userPath + @"\", @"..\");
+                    // Crear una ruta corta si está dentro del userPath, sino usar la absoluta
+                    string path;
+                    if (directory.StartsWith(userPath + @"\", StringComparison.OrdinalIgnoreCase))
+                    {
+                        path = directory.Replace(userPath + @"\", @"..\");
+                    }
+                    else
+                    {
+                        path = directory;
+                    }
 
                     // Si el folder no está oculto...
                     if (!((File.GetAttributes(directory) & FileAttributes.Hidden) == FileAttributes.Hidden))
@@ -173,7 +187,17 @@ namespace CrystalFolders
                 // Para cada ruta, obtener los subdirectorios
                 foreach (string path in folderList)
                 {
-                    string directory = path.Replace(@"..\", userPath + @"\");
+                    // Restaurar ruta absoluta si es relativa
+                    string directory;
+                    if (path.StartsWith(@"..\"))
+                    {
+                        directory = path.Replace(@"..\", userPath + @"\");
+                    }
+                    else
+                    {
+                        directory = path;
+                    }
+
                     try
                     {
                         string[] subdirectories = Directory.GetDirectories(directory);
@@ -257,52 +281,52 @@ namespace CrystalFolders
         #region Checked and Unchecked
         private void Documents_Checked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Documents", true);
+            CheckBoxes(Environment.SpecialFolder.MyDocuments, true);
         }
 
         private void Pictures_Checked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Pictures", true);
+            CheckBoxes(Environment.SpecialFolder.MyPictures, true);
         }
 
         private void Music_Checked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Music", true);
+            CheckBoxes(Environment.SpecialFolder.MyMusic, true);
         }
 
         private void Videos_Checked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Videos", true);
+            CheckBoxes(Environment.SpecialFolder.MyVideos, true);
         }
 
         private void Desktop_Checked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Desktop", true);
+            CheckBoxes(Environment.SpecialFolder.Desktop, true);
         }
 
         private void Documents_Unchecked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Documents", false);
+            CheckBoxes(Environment.SpecialFolder.MyDocuments, false);
         }
 
         private void Pictures_Unchecked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Pictures", false);
+            CheckBoxes(Environment.SpecialFolder.MyPictures, false);
         }
 
         private void Music_Unchecked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Music", false);
+            CheckBoxes(Environment.SpecialFolder.MyMusic, false);
         }
 
         private void Videos_Unchecked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Videos", false);
+            CheckBoxes(Environment.SpecialFolder.MyVideos, false);
         }
 
         private void Desktop_Unchecked(object sender, RoutedEventArgs e)
         {
-            CheckBoxes("Desktop", false);
+            CheckBoxes(Environment.SpecialFolder.Desktop, false);
         }
         #endregion
 
@@ -342,33 +366,66 @@ namespace CrystalFolders
                     // o si no es solo la carperta de usuario
                     if (DirectoryPermissions(directory) && (directory != userPath))
                     {
-                        // Acortar eliminando ruta con nombre de usuario
-                        string folder = directory.Replace(userPath + @"\", @"..\");
-
-                        // Evitar que se agreguen carpetas principales que tienen un icono predeterminado
-                        switch (folder)
+                        // Acortar eliminando ruta con nombre de usuario si es que está dentro
+                        string folder;
+                        if (directory.StartsWith(userPath + @"\", StringComparison.OrdinalIgnoreCase))
                         {
-                            case @"..\Searches":
-                            case @"..\Contacts":
-                            case @"..\Downloads":
-                            case @"..\Documents":
-                            case @"..\Desktop":
-                            case @"..\Favorites":
-                            case @"..\Pictures":
-                            case @"..\Saved Games":
-                            case @"..\Music":
-                            case @"..\3D Objects":
-                            case @"..\Videos":
-                            case @"..\Links":
-                                warnMssg++;
+                            folder = directory.Replace(userPath + @"\", @"..\");
+                        }
+                        else
+                        {
+                            folder = directory;
+                        }
+
+                        // Evitar que se agreguen carpetas principales del sistema que tienen un icono predeterminado
+                        bool isSpecialFolder = false;
+                        Environment.SpecialFolder[] protectedFolders = {
+                            Environment.SpecialFolder.MyDocuments, Environment.SpecialFolder.MyPictures,
+                            Environment.SpecialFolder.MyMusic, Environment.SpecialFolder.MyVideos,
+                            Environment.SpecialFolder.Desktop, Environment.SpecialFolder.Favorites,
+                            Environment.SpecialFolder.Recent // Representa Searches y/o Links en entornos viejos/específicos dependiendo SO. Lo ideal es match rudo.
+                        };
+
+                        foreach (var sf in protectedFolders)
+                        {
+                            string sFolderPath = Environment.GetFolderPath(sf);
+                            if (!string.IsNullOrEmpty(sFolderPath) && directory.Equals(sFolderPath, StringComparison.OrdinalIgnoreCase))
+                            {
+                                isSpecialFolder = true;
                                 break;
-                            default:
-                                // Agregar las carpetas a la folderList, si no existen
-                                if (!folderList.Contains(folder))
-                                {
-                                    folderList.Add(folder);
-                                }
+                            }
+                        }
+
+                        // También verificar si entra como Contacts, Downloads, 3D Objects, Saved Games (rutas manuales comunes del usuario)
+                        string[] explicitProtections = {
+                            Path.Combine(userPath, "Downloads"),
+                            Path.Combine(userPath, "Contacts"),
+                            Path.Combine(userPath, "Saved Games"),
+                            Path.Combine(userPath, "3D Objects"),
+                            Path.Combine(userPath, "Links"),
+                            Path.Combine(userPath, "Searches")
+                        };
+
+                        foreach (var ep in explicitProtections)
+                        {
+                            if (directory.Equals(ep, StringComparison.OrdinalIgnoreCase))
+                            {
+                                isSpecialFolder = true;
                                 break;
+                            }
+                        }
+
+                        if (isSpecialFolder)
+                        {
+                            warnMssg++;
+                        }
+                        else
+                        {
+                            // Agregar las carpetas a la folderList, si no existen
+                            if (!folderList.Contains(folder))
+                            {
+                                folderList.Add(folder);
+                            }
                         }
 
                         // Si está activada la opción de subcarpetas, agregarlas
@@ -534,7 +591,16 @@ namespace CrystalFolders
             // Personalizar los folders de la lista principal.
             foreach (string folder in folderList)
             {
-                string fullPath = folder.Replace(@"..\", userPath + @"\") + @"\";
+                // Reconstruir la ruta absoluta (relativa o ya absoluta)
+                string fullPath;
+                if (folder.StartsWith(@"..\"))
+                {
+                    fullPath = folder.Replace(@"..\", userPath + @"\") + @"\";
+                }
+                else
+                {
+                    fullPath = folder + @"\";
+                }
 
                 // Si el switch de Portable está activado...
                 if (isPortable)
@@ -618,7 +684,15 @@ namespace CrystalFolders
                 // Eliminar las subcarpetas también, si el switch está activado
                 if (SlideSub.IsChecked == true)
                 {
-                    string directory = selected.Replace(@"..\", userPath + @"\");
+                    string directory;
+                    if (selected.StartsWith(@"..\"))
+                    {
+                        directory = selected.Replace(@"..\", userPath + @"\");
+                    }
+                    else
+                    {
+                        directory = selected;
+                    }
                     RemoveSubFolders(directory);
                 }
 
