@@ -168,18 +168,22 @@ Message = true
 *Puedes encontrar todas las licencias [aquí](/src/CystalFolders/Docs).*
 
 ## ¿Qué es lo nuevo?
-`Versión 1.2.0` evita que la fecha de modificación de la carpeta cambie al momento de personalizarlas. Y se agregaron un par de mejoras visuales a la ventana **Acerca de**.
-
 `Versión 1.3.1` incluye un parche que evita el cierre de la app cuando los folders no logran agregarse desde las casillas y a su vez, muestra una sugerencia de arrastrarlos y soltarlos.
 
 Tanto el portable como instalable incluyen también un acceso directo a [Custom Folder](https://genesistoxical.github.io/customfolder/).
 
+<br>
+
 `Versión 1.3.4` se corrigió un bug en el cual a veces el caché no se actualizaba, por lo que no se mostraban cambios al instante o después de un tiempo.
+
+<br>
+
+`Versión 1.4.0` cambio de lógica de busqueda para que no se rompa cuando se agregan directorios no predeterminados [📍Cambio logica de busqueda](https://github.com/genesistoxical/crystal-folders/pull/3).
 
 ## Licencia
 **MIT License**
 
-Copyright (c) 2025 Génesis Toxical ([read here](LICENSE)).
+Copyright (c) 2025 - 2026 Génesis Toxical ([read here](LICENSE)).
 
 <br>
 

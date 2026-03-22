@@ -19,7 +19,7 @@ namespace CrystalFolders.Properties {
     // a través de una herramienta como ResGen o Visual Studio.
     // Para agregar o quitar un miembro, edite el archivo .ResX y, a continuación, vuelva a ejecutar ResGen
     // con la opción /str o recompile su proyecto de VS.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -403,7 +403,7 @@ namespace CrystalFolders.Properties {
         }
         
         /// <summary>
-        ///   Busca una cadena traducida similar a 1.3.4.
+        ///   Busca una cadena traducida similar a 1.4.0.
         /// </summary>
         public static string Ver {
             get {

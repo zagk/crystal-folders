@@ -1,5 +1,5 @@
 ﻿#define MyAppName "Crystal Folders"
-#define MyAppVersion "1.3.4"
+#define MyAppVersion "1.4.0"
 #define MyAppPublisher "Génesis Toxical"
 #define MyAppURL "https://genesistoxical.github.io/crystal-folders/"
 #define MyAppExeName "Crystal Folders.exe"
@@ -8,9 +8,9 @@
 AppId={{96F31E5A-5556-46BB-9EB0-EF511EBEEDA7}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-VersionInfoVersion=1.3.4.0
+VersionInfoVersion=1.4.0.0
 AppPublisher={#MyAppPublisher}
-AppCopyright={#MyAppPublisher} © 2025
+AppCopyright={#MyAppPublisher} © 2025 - 2026
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
