@@ -1,4 +1,4 @@
-﻿#define MyAppName "Crystal Folders"
+#define MyAppName "Crystal Folders"
 #define MyAppVersion "1.4.0"
 #define MyAppPublisher "Génesis Toxical"
 #define MyAppURL "https://genesistoxical.github.io/crystal-folders/"
@@ -45,3 +45,11 @@ Source: "Custom 📂 Folder.url"; DestDir: "{userdesktop}"; Flags: ignoreversion
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+[Code]
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    RegDeleteKeyIncludingSubkeys(HKEY_CURRENT_USER, 'Software\Classes\Directory\shell\CrystalFolder');
+  end;
+end;
