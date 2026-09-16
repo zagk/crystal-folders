@@ -1,7 +1,9 @@
-﻿using HandyControl.Themes;
+using HandyControl.Themes;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Diagnostics;
+using Microsoft.Win32;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,16 +22,113 @@ namespace CrystalFolders
         internal static string[] iniLines;
         internal static bool restart = false;
 
+        private const string ContextMenuKey = @"Software\Classes\Directory\shell\CrystalFolder";
+        private const string ContextMenuSetting = "ContextMenu = true";
+
+        internal static bool GetContextMenu()
+        {
+            foreach (string line in iniLines)
+            {
+                if (line.Trim().Equals(ContextMenuSetting, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal static void SetContextMenu(bool enabled)
+        {
+            bool found = false;
+            string value = enabled ? "ContextMenu = true" : "ContextMenu = false";
+
+            for (int i = 0; i < iniLines.Length; i++)
+            {
+                if (iniLines[i].TrimStart().StartsWith("ContextMenu =", StringComparison.OrdinalIgnoreCase))
+                {
+                    iniLines[i] = value;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                Array.Resize(ref iniLines, iniLines.Length + 1);
+                iniLines[iniLines.Length - 1] = value;
+            }
+
+            File.WriteAllLines(iniPath, iniLines);
+
+            if (enabled)
+            {
+                RegisterContextMenu();
+            }
+            else
+            {
+                UnregisterContextMenu();
+            }
+        }
+
+        internal static void RegisterContextMenu()
+        {
+            try
+            {
+                string exePath = Process.GetCurrentProcess().MainModule.FileName;
+
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(ContextMenuKey))
+                {
+                    key.SetValue(null, "Crystal Folder");
+                    key.SetValue("Icon", exePath);
+
+                    using (RegistryKey commandKey = key.CreateSubKey("command"))
+                    {
+                        commandKey.SetValue(null, "\"" + exePath + "\" --context-folder \"%1\"");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Context menu registration error: " + ex.Message);
+            }
+        }
+
+        internal static void UnregisterContextMenu()
+        {
+            try
+            {
+                Registry.CurrentUser.DeleteSubKeyTree(ContextMenuKey, false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Context menu removal error: " + ex.Message);
+            }
+        }
+
         internal static void CheckPath()
         {
-            // Busca el archivo ini en la misma carpeta para saber si
-            // Drop Icons está instalado o no, incluso si se tiene una
-            // versión instalada y otra portable
-            isIntalled = !File.Exists("Config.ini");
+            // Do not use the process current working directory here.
+            // Windows Shell verbs can start the application with the selected
+            // folder (or another directory) as the working directory. That made
+            // the context-menu launch fail because Config.ini was searched for
+            // in the wrong place.
+            appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Crystal Folders");
 
-            // Establece las rutas de ini y dat, dependiendo de lo anterior
-            appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Crystal Folders";
-            iniPath = isIntalled ? appData + "\\Config.ini" : "Config.ini";
+            string portableConfig = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config.ini");
+            string installedConfig = Path.Combine(appData, "Config.ini");
+
+            if (File.Exists(portableConfig))
+            {
+                isIntalled = false;
+                iniPath = portableConfig;
+            }
+            else
+            {
+                isIntalled = true;
+                iniPath = installedConfig;
+            }
+
             iniLines = File.ReadAllLines(iniPath);
 
             Console.WriteLine("Crystal Folders is installed? " + isIntalled + " - ¿Crystal Folders está instalado? " + isIntalled);
