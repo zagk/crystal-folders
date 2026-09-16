@@ -23,7 +23,7 @@ namespace CrystalFolders
         /// </summary>
 
         public static string icoPath, userPath;
-        public static bool isPortable = false, isRestore = false;
+        public static bool isPortable = true, isRestore = false;
         public static ObservableCollection<string> folderList;
         public static List<string> subfolderList, ignore;
 
@@ -336,6 +336,70 @@ namespace CrystalFolders
             Config.RoundCorners(Bg1, Bg2, Border1, Border2, Deco1, Deco2);
 
             DropList.ItemsSource = folderList;
+
+            // Restore the context-menu option and register it if it was enabled.
+            bool contextMenuEnabled = Config.GetContextMenu();
+            SlideContextMenu.IsChecked = contextMenuEnabled;
+            if (contextMenuEnabled)
+            {
+                Config.RegisterContextMenu();
+            }
+
+            // If Crystal Folders was launched from the Windows folder context menu,
+            // automatically add the selected folder to the left-hand list.
+            // The context-menu command uses --context-folder, but also accept any
+            // directory argument so the feature remains compatible with older entries.
+            string[] args = Environment.GetCommandLineArgs();
+            string contextFolder = null;
+
+            for (int i = 1; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], "--context-folder", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    contextFolder = args[i + 1];
+                    break;
+                }
+
+                if (Directory.Exists(args[i]))
+                {
+                    contextFolder = args[i];
+                    break;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(contextFolder) && Directory.Exists(contextFolder))
+            {
+                AddContextFolder(contextFolder);
+            }
+        }
+
+        private void AddContextFolder(string directory)
+        {
+            try
+            {
+                directory = Path.GetFullPath(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+
+                string folder;
+                if (directory.StartsWith(userPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                {
+                    folder = @"..\" + directory.Substring((userPath + Path.DirectorySeparatorChar).Length);
+                }
+                else
+                {
+                    folder = directory;
+                }
+
+                if (!folderList.Contains(folder))
+                {
+                    folderList.Add(folder);
+                }
+
+                NCount();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Context folder error: " + ex.Message);
+            }
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -737,6 +801,16 @@ namespace CrystalFolders
         private void SlidePortable_Unchecked(object sender, RoutedEventArgs e)
         {
             isPortable = false;
+        }
+
+        private void SlideContextMenu_Checked(object sender, RoutedEventArgs e)
+        {
+            Config.SetContextMenu(true);
+        }
+
+        private void SlideContextMenu_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Config.SetContextMenu(false);
         }
 
         private void SlidePortable_Click(object sender, RoutedEventArgs e)
